@@ -1,0 +1,8 @@
+node_modules
+.env
+com-aganepes-example-firebase-adminsdk-fbsvc-6b87600893.json
+google-services.json
+.expo
+.vscode
+android
+ios
