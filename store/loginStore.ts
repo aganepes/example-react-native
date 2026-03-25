@@ -1,15 +1,15 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TUser } from '@/types/user';
+import { RegisterData, TUser } from '@/types/user';
 import NatificationUtils from '@/utils/natification';
 
 export type TypeState = {
-  user: TUser | null,
+  user: RegisterData | null,
   isLoading: boolean,
   error: string | null,
   clearError: () => void,
   fetchUser: () => Promise<void>,
-  register: (user: TUser) => Promise<void>,
+  register: (user: RegisterData) => Promise<void>,
   login: (username: string, password: string) => Promise<void>,
   logout: () => Promise<void>
 }
@@ -18,8 +18,8 @@ const useLoginStore = create<TypeState>((set) => ({
   isLoading: false,
   user: null,
   error: null,
-  clearError:()=>set({error:null}),
-  register: async (userData: TUser) => {
+  clearError: () => set({ error: null }),
+  register: async (userData: RegisterData) => {
     try {
       set({ isLoading: true, error: null, user: null });
       const pushToken = await NatificationUtils.getPushTokenAsync();
@@ -36,7 +36,7 @@ const useLoginStore = create<TypeState>((set) => ({
         return;
       }
       //! tokens
-      const { accessToken, refreshToken, user } = result;
+      const { accessToken, refreshToken, user } = result as { user: TUser, accessToken: any, refreshToken: any };
       await AsyncStorage.setItem('user', JSON.stringify({ user: { id: user.id, username: userData.username }, accessToken, refreshToken }));
       set({ user });
     } catch (error) {
@@ -67,7 +67,7 @@ const useLoginStore = create<TypeState>((set) => ({
         return;
       }
       //! tokens
-      const { accessToken, refreshToken, user } = result;
+      const { accessToken, refreshToken, user } = result as { user: TUser, accessToken: any, refreshToken: any };
       await AsyncStorage.setItem('user', JSON.stringify({ user: { id: user.id, username: user.username }, accessToken, refreshToken }));
       set({ user });
     } catch (error) {
@@ -112,7 +112,7 @@ const useLoginStore = create<TypeState>((set) => ({
         return;
       }
       //! tokens
-      await AsyncStorage.setItem('user', JSON.stringify({ user, accessToken: result.accessToken || accessToken, refreshToken }));
+      await AsyncStorage.setItem('user', JSON.stringify({ user, accessToken: result.accessToken, refreshToken }));
     } catch (error) {
       if (error instanceof Error) {
         set({ error: error.message });
