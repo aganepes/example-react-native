@@ -3,8 +3,10 @@ import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { useEffect } from 'react';
+import { Router } from 'expo-router';
 
-namespace NatificationUtils {
+namespace NotificationUtils {
   // Bu kanallar Android üçin ulanylýar, iOS-da kanallar ýok. iOS-da bildirişiň nähili görünjekdigini ulanyjynyň öz telefonyndaky "Sazlamalar" (Settings) bölümi kesgitleýär.
   export const DEFAULT = { id: "default-channel", name: 'Default Channel' };
   export const PUSH = { id: "push-channel", name: "Push Channel" };
@@ -179,10 +181,10 @@ namespace NatificationUtils {
       content: {
         title: title ?? "This is alarm notification 🔔.",
       },
-      trigger:{
+      trigger: {
         channelId: Platform.OS === "android" ? LOCAL.id : undefined,
         type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date:date ?? new Date(Date.now() - 60 * 1000)
+        date: date ?? new Date(Date.now() - 60 * 1000)
       }
     });
   }
@@ -217,9 +219,32 @@ namespace NatificationUtils {
     });
   }
   // push notification backend ugradylmaly.
+  export function useNotificationObserver(router: Router) {
+    useEffect(() => {
+      function redirect(notification: Notifications.Notification) {
+        const url = notification.request.content.data?.url;
+        if (typeof url === 'string') {
+          router.push(url as any);
+        }
+      }
+      //! killed state - close app and background to working
+      const response = Notifications.getLastNotificationResponse();
+      if (response?.notification) {
+        redirect(response.notification);
+      }
+
+      const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+        redirect(response.notification);
+      });
+
+      return () => {
+        subscription.remove();
+      };
+    }, []);
+  }
 }
 
-export default NatificationUtils;
+export default NotificationUtils;
 
 /*
 ! 1. importance (Android-de Esasy Tapawutlandyryjy)

@@ -1,4 +1,3 @@
-import React, { useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -7,54 +6,50 @@ import {
   ScrollView,
 } from 'react-native';
 import useLoginStore from '@/store/loginStore';
-import { useRouter } from 'expo-router';
 
 const HomeScreen = () => {
-  const { user, logout, fetchUser } = useLoginStore();
-  const router = useRouter();
-
-  useLayoutEffect(() => {
-    fetchUser();
-  }, []);
-
-  useEffect(() => {
-    if (!user) router.push('/(auth)/login');
-  }, [user,router]);
-
+  const { user, logout } = useLoginStore();
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
           <Text style={styles.welcome}>Welcome!</Text>
-          <Text style={styles.name}>{user?.name} {user?.lastname}</Text>
+          {user ? <Text style={styles.name}>{user?.name} {user?.lastname}</Text>
+            : <Text style={styles.name}> You not login. </Text>
+          }
         </View>
+        {user ? (
+          <>
+            <View style={styles.infoCard}>
+              <Text style={styles.infoTitle}>Profile Information</Text>
 
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>Profile Information</Text>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Username:</Text>
+                <Text style={styles.infoValue}>{user?.username}</Text>
+              </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Username:</Text>
-            <Text style={styles.infoValue}>{user?.username}</Text>
-          </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Full Name:</Text>
+                <Text style={styles.infoValue}>
+                  {user?.name} {user?.lastname} {user?.surename || ''}
+                </Text>
+              </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Full Name:</Text>
-            <Text style={styles.infoValue}>
-              {user?.name} {user?.lastname} {user?.surename || ''}
-            </Text>
-          </View>
-
-          {user?.pasportSerial && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Passport:</Text>
-              <Text style={styles.infoValue}>{user?.pasportSerial}</Text>
+              {user?.pasportSerial && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Passport:</Text>
+                  <Text style={styles.infoValue}>{user?.pasportSerial}</Text>
+                </View>
+              )}
             </View>
-          )}
-        </View>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <Text style={styles.logoutButtonText}>Logout</Text>
-        </TouchableOpacity>
+            <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+              <Text style={styles.logoutButtonText}>Logout</Text>
+            </TouchableOpacity>
+          </>
+        )
+          : <Text style={styles.name}> Not informasion. </Text>
+        }
       </ScrollView>
     </View>
   );

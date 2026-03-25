@@ -1,4 +1,4 @@
-import { useState, useEffect, cache } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigation } from 'expo-router';
 import { Text, View, Button, Platform, ScrollView } from 'react-native';
 import * as Linking from 'expo-linking';

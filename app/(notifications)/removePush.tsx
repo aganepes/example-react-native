@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Text, View, Platform, StyleSheet, TextInput, Pressable } from 'react-native';
+
+import { useState, useEffect} from 'react';
+import { Text, View, Platform,  TextInput, Pressable, StyleSheet } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import NotificationUtils from '@/utils/natification';
@@ -10,20 +11,60 @@ export default function App() {
   const [notification, setNotification] = useState<Notifications.Notification | undefined>(
     undefined
   );
-  const [title, setTitle] = useState<string>('');
 
   useEffect(() => {
+    registerForPushNotificationsAsync().then(async (token: any) => {
+      if (token) {
+        setExpoPushToken(token);
+        try {
+          console.log(token)
+          console.log(`${process.env.EXPO_PUBLIC_API_URL}/users/register-token`)
+          const resp = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/users/register-token`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ id: 1, expo_token: token })
+            });
+          console.log(await resp.json());
+        } catch (error) {
+          console.error(error)
+        }
+
+      }
+    });
+
     if (Platform.OS === 'android') {
       Notifications.getNotificationChannelsAsync().then(value => setChannels(value ?? []));
-      const token = NotificationUtils.getPushTokenAsync();
-      setExpoPushToken(token || '');
     }
     const notificationListener = Notifications.addNotificationReceivedListener(notification => {
       setNotification(notification);
     });
 
+    const responseListener = Notifications.addNotificationResponseReceivedListener(async response => {
+      console.log('Kabul edildi...');
+      const { actionIdentifier, notification } = response;
+      if (actionIdentifier === "play") {
+        console.log("Play button pressed");
+      }
+      if (actionIdentifier === 'pause') {
+        console.log("Pause button pressed");
+      }
+      if (actionIdentifier === 'stop') {
+        console.log('Stop button pressed')
+      }
+      if (actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER) {
+        console.log('Notification tapped');
+        // Linking.openURL('https://www.google.com/maps/search/?api=1&query=Ashgabat')
+        // Linking.openSettings()
+        // Linking.openURL('sms://+99262295942')
+      }
+    });
+
     return () => {
       notificationListener.remove();
+      responseListener.remove();
     };
   }, []);
 
@@ -53,7 +94,6 @@ export default function App() {
     </SafeAreaView>
   );
 }
-
 
 const styles = StyleSheet.create({
   text: {

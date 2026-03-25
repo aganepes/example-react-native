@@ -53,7 +53,7 @@ const RegisterScreen = () => {
         [
           {
             text: 'OK',
-            onPress: () => navigation.push('/login'),
+            onPress: () => navigation.push('/(auth)/login'),
           },
         ]
       );
@@ -179,7 +179,7 @@ const RegisterScreen = () => {
 
           <View style={styles.loginContainer}>
             <Text style={styles.loginText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.push('/login')}>
+            <TouchableOpacity onPress={() => navigation.push('/(auth)/login')}>
               <Text style={styles.loginLink}>Sign In</Text>
             </TouchableOpacity>
           </View>
