@@ -1,72 +1,41 @@
 
-import { useState, useEffect} from 'react';
-import { Text, View, Platform,  TextInput, Pressable, StyleSheet } from 'react-native';
-import * as Notifications from 'expo-notifications';
+import { useState, useEffect } from 'react';
+import { useSegments } from 'expo-router';
+import { Text, View, TextInput, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import NotificationUtils from '@/utils/natification';
+import NotificationUtils from '@/utils/notification';
 
 export default function App() {
   const [expoPushToken, setExpoPushToken] = useState('');
-  const [channels, setChannels] = useState<Notifications.NotificationChannel[]>([]);
-  const [notification, setNotification] = useState<Notifications.Notification | undefined>(
-    undefined
-  );
+  const [body, setBody] = useState<string>('');
+  const [title, setTitle] = useState<string>('');
+  const segments = useSegments();
+  async function sendPushNotification(expoPushToken: string, body: string, title: string) {
+    const message = {
+      to: expoPushToken,
+      title: title || 'Original Title',
+      body: body || 'And here is the body!',
+      data: { someData: 'goes here' },
+    };
+
+    await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Accept-encoding': 'gzip, deflate',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(message),
+    });
+  }
 
   useEffect(() => {
-    registerForPushNotificationsAsync().then(async (token: any) => {
-      if (token) {
-        setExpoPushToken(token);
-        try {
-          console.log(token)
-          console.log(`${process.env.EXPO_PUBLIC_API_URL}/users/register-token`)
-          const resp = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/users/register-token`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ id: 1, expo_token: token })
-            });
-          console.log(await resp.json());
-        } catch (error) {
-          console.error(error)
-        }
-
-      }
-    });
-
-    if (Platform.OS === 'android') {
-      Notifications.getNotificationChannelsAsync().then(value => setChannels(value ?? []));
-    }
-    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      setNotification(notification);
-    });
-
-    const responseListener = Notifications.addNotificationResponseReceivedListener(async response => {
-      console.log('Kabul edildi...');
-      const { actionIdentifier, notification } = response;
-      if (actionIdentifier === "play") {
-        console.log("Play button pressed");
-      }
-      if (actionIdentifier === 'pause') {
-        console.log("Pause button pressed");
-      }
-      if (actionIdentifier === 'stop') {
-        console.log('Stop button pressed')
-      }
-      if (actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER) {
-        console.log('Notification tapped');
-        // Linking.openURL('https://www.google.com/maps/search/?api=1&query=Ashgabat')
-        // Linking.openSettings()
-        // Linking.openURL('sms://+99262295942')
-      }
-    });
-
-    return () => {
-      notificationListener.remove();
-      responseListener.remove();
-    };
-  }, []);
+    let token
+    (async () => {
+      token = await NotificationUtils.getPushTokenAsync();
+    })()
+    setExpoPushToken(token || '');
+  }, [])
 
   return (
     <SafeAreaView style={{ flex: 1, padding: 16 }}>
@@ -75,18 +44,17 @@ export default function App() {
           alignItems: 'center',
           justifyContent: 'space-around',
         }}>
-
-        <Text>{`Channels: ${JSON.stringify(channels.map(c => c.id), null, 2)}`}</Text>
-        <Text style={styles.text}>Your expo push token: {expoPushToken || 'Empty push token'}</Text>
         <View style={{ alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-          <Text style={styles.text}>Title: {notification && notification.request.content.title} </Text>
+          <Text style={styles.text}>Your expo push token: {expoPushToken || 'Empty push token'}</Text>
         </View>
         <View style={{ width: '90%', padding: 10, gap: 12 }}>
           {/*  */}
           <TextInput style={styles.input} placeholder='input to notification title' onChangeText={setTitle} value={title} />
+          <Text style={{ fontSize: 10, color: 'green' }}>{JSON.stringify(segments, null, 2)}</Text>
+          <TextInput style={styles.input} placeholder='input to page' onChangeText={setBody} value={body} />
           {/*  */}
           <Pressable style={styles.button}
-            onPress={() => NotificationUtils.scheduleWarningNotification(title)}>
+            onPress={() => sendPushNotification(expoPushToken, title, `/${body}`)}>
             <Text style={{ fontSize: 14, fontWeight: 'bold' }}>To default notification</Text>
           </Pressable>
         </View>

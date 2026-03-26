@@ -109,7 +109,8 @@
         }
       ],
       "@react-native-firebase/app",
-      "expo-maps"
+      "expo-maps",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

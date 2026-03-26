@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RegisterData, TUser } from '@/types/user';
-import NatificationUtils from '@/utils/natification';
+import NatificationUtils from '@/utils/notification';
 
 export type TypeState = {
   user: RegisterData | null,

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Text, View, Platform, StyleSheet, TextInput, Pressable } from 'react-native';
+import { Text, View, Platform, StyleSheet, TextInput, Pressable, Button } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import NotificationUtils from '@/utils/natification';
+import NotificationUtils from '@/utils/notification';
+import { useRouter } from 'expo-router';
 
 export default function App() {
   const [expoPushToken, setExpoPushToken] = useState('');
@@ -11,12 +12,12 @@ export default function App() {
     undefined
   );
   const [title, setTitle] = useState<string>('');
-
+  const router = useRouter();
+  
   useEffect(() => {
     if (Platform.OS === 'android') {
       Notifications.getNotificationChannelsAsync().then(value => setChannels(value ?? []));
-      const token = NotificationUtils.getPushTokenAsync();
-      setExpoPushToken(token || '');
+      NotificationUtils.getPushTokenAsync().then(token => setExpoPushToken(token || ''));
     }
     const notificationListener = Notifications.addNotificationReceivedListener(notification => {
       setNotification(notification);
@@ -48,6 +49,12 @@ export default function App() {
             onPress={() => NotificationUtils.scheduleWarningNotification(title)}>
             <Text style={{ fontSize: 14, fontWeight: 'bold' }}>To default notification</Text>
           </Pressable>
+        </View>
+        <View style={{gap:10}}>
+          <Button title='to alarm notification' onPress={()=>router.navigate('/(notifications)/alarm')}/>
+          <Button title='to player notification' onPress={()=>router.navigate('/(notifications)/player')}/>
+          <Button title='to push notification' onPress={()=>router.navigate('/(notifications)/removePush')}/>
+          
         </View>
       </View>
     </SafeAreaView>

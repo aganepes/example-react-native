@@ -1,7 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
 import useLoginStore from '@/store/loginStore';
 import { useEffect } from 'react';
-import NatificationUtils from '@/utils/natification'
+import NatificationUtils from '@/utils/notification'
 
 const Layout = () => {
   const { user, fetchUser } = useLoginStore();

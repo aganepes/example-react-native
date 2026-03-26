@@ -4,11 +4,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Button,
 } from 'react-native';
 import useLoginStore from '@/store/loginStore';
+import { useRouter } from 'expo-router';
 
 const HomeScreen = () => {
   const { user, logout } = useLoginStore();
+  const router = useRouter();
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -50,7 +53,14 @@ const HomeScreen = () => {
         )
           : <Text style={styles.name}> Not informasion. </Text>
         }
+        <View style={{ gap: 10 }}>
+          <Button title='to notifications' onPress={() => router.navigate('/(notifications)')} />
+          <Button title='to login' onPress={() => router.navigate('/(auth)/login')} />
+          <Button title='to register' onPress={() => router.navigate('/(auth)/register')} />
+          <Button title="to media" onPress={() => router.navigate('/(media)/camera')} />
+        </View>
       </ScrollView>
+
     </View>
   );
 };

@@ -1,117 +1,67 @@
-import { useState, useEffect } from 'react';
-import { useNavigation } from 'expo-router';
-import { Text, View, Button, Platform, ScrollView } from 'react-native';
-import * as Linking from 'expo-linking';
-import * as Notifications from 'expo-notifications';
-import { registerForPushNotificationsAsync, schedulePushNotification, scheduleLocalNotification, scheduleLocalSecondNotification, showMediaNotification, sendImageNotification } from '@/utils/natification';
+import { useState } from 'react';
+import { Text, View, Button,  TextInput } from 'react-native';
+import NotificationUtils from '@/utils/notification';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import * as SystemUI from 'expo-system-ui';
 
-export default function App() {
-  const [expoPushToken, setExpoPushToken] = useState('');
-  const [channels, setChannels] = useState<Notifications.NotificationChannel[]>([]);
-  const [notification, setNotification] = useState<Notifications.Notification | undefined>(
-    undefined
-  );
-  const nativation = useNavigation();
+export default function AlarmComponent() {
+  const [time, setTime] = useState(new Date());
+  const [showPicker, setShowPicker] = useState(false);
+  const [title, setTitle] = useState('');
 
-  useEffect(() => {
-    registerForPushNotificationsAsync().then(async (token:any) => {
-      if (token) {
-        setExpoPushToken(token);
-        try {
-          console.log(token)
-          console.log(`${process.env.EXPO_PUBLIC_API_URL}/users/register-token`)
-          const resp = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/users/register-token`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ id: 1, expo_token: token })
-            });
-            console.log(await resp.json());
-        } catch (error) {
-          console.error(error)
-        }
+  // Background color (opsiyonel)
+  SystemUI.setBackgroundColorAsync('#fff');
 
-      }
-    });
-
-    if (Platform.OS === 'android') {
-      Notifications.getNotificationChannelsAsync().then(value => setChannels(value ?? []));
+  const onChange = (event:any, selectedDate:any) => {
+    setShowPicker(false);
+    if (selectedDate) {
+      setTime(selectedDate);
     }
-    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      setNotification(notification);
-    });
+  };
 
-    const responseListener = Notifications.addNotificationResponseReceivedListener(async response => {
-      console.log('Kabul edildi...');
-      const { actionIdentifier, notification } = response;
-      if (actionIdentifier === "play") {
-        console.log("Play button pressed");
-      }
-      if (actionIdentifier === 'pause') {
-        console.log("Pause button pressed");
-      }
-      if (actionIdentifier === 'stop') {
-        console.log('Stop button pressed')
-      }
-      if (actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER) {
-        console.log('Notification tapped');
-        // Linking.openURL('https://www.google.com/maps/search/?api=1&query=Ashgabat')
-        // Linking.openSettings()
-        // Linking.openURL('sms://+99262295942')
-      }
-    });
+  const setAlarm = async () => {
+    if (!title) {
+      alert('Title gir!');
+      return;
+    }
 
-    return () => {
-      notificationListener.remove();
-      responseListener.remove();
-    };
-  }, []);
+    await NotificationUtils.scheduleAlarmNotification(title,time);
+
+    alert('Alarm guruldy!');
+  };
 
   return (
-    <SafeAreaView style={{ flex: 1, padding: 16 }}>
-      <View
+    <SafeAreaView style={{ padding: 20 }}>
+      <Text>Alarm Title:</Text>
+      <TextInput
+        value={title}
+        onChangeText={setTitle}
+        placeholder="Mysal: Oyan!"
         style={{
-          alignItems: 'center',
-          justifyContent: 'space-around',
-        }}>
-        <Text>Your expo push token: {expoPushToken}</Text>
-        <Text>{`Channels: ${JSON.stringify(channels.map(c => c.id), null, 2)}`}</Text>
-        <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-          <Text>Title: {notification && notification.request.content.title} </Text>
-          <Text>Body: {notification && notification.request.content.body}</Text>
-          <Text>Data: {notification && JSON.stringify(notification.request.content.data)}</Text>
-        </View>
-        <Button
-          title='to Gallery'
-          onPress={() => nativation.navigate('/gallery')}
-        />
-        <ScrollView style={{ backgroundColor: "gray", gap: 10, marginTop: 20, padding: 10 }}>
-          <Text style={{ fontSize: 16, fontFamily: "Time New" }}></Text>
-          <Button
-            title="Press to schedule a notification"
-            onPress={async () => await schedulePushNotification('Selam!', "Bu salamlaşmak üçin ugradyldy.", { data: 'Bu mugalumat' })}
-          />
-          <Button
-            title='to show local notification'
-            onPress={async () => await scheduleLocalNotification('Local notification title', 'Local notification body', { localData: 'local data' })}
-          />
-          <Button
-            title='to show 5 minut local notification'
-            onPress={async () => await scheduleLocalSecondNotification('5 sekundan gelýär')}
-          />
-          <Button
-            title='to show player notification'
-            onPress={async () => await showMediaNotification()}
-          />
-          <Button
-            title='to show Image notification'
-            onPress={async () => await sendImageNotification()}
-          />
-        </ScrollView>
+          borderWidth: 1,
+          padding: 10,
+          marginVertical: 10,
+          borderRadius: 8,
+        }}
+      />
 
+      <Text>Wagt: {time.toLocaleTimeString()}</Text>
+
+      <Button title="Wagty sayla" onPress={() => setShowPicker(true)} />
+
+      {showPicker && (
+        <DateTimePicker
+          value={time}
+          mode="time"
+          is24Hour={true}
+          display="clock"
+          onChange={onChange}
+        />
+      )}
+
+      <View style={{ marginTop: 20 }}>
+        <Button title="Alarm gur" onPress={setAlarm} />
       </View>
     </SafeAreaView>
   );

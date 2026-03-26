@@ -1,118 +1,123 @@
-import { useState, useEffect, cache } from 'react';
-import { useNavigation } from 'expo-router';
-import { Text, View, Button, Platform, ScrollView } from 'react-native';
-import * as Linking from 'expo-linking';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  Button,
+  Image,
+  useColorScheme,
+} from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { registerForPushNotificationsAsync, schedulePushNotification, scheduleLocalNotification, scheduleLocalSecondNotification, showMediaNotification, sendImageNotification } from '@/utils/natification';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Audio } from 'expo-av';
+import * as SystemUI from 'expo-system-ui';
+import NotificationUtils from '@/utils/notification';
+import { tracks } from '@/contents/sound';
 
-export default function App() {
-  const [expoPushToken, setExpoPushToken] = useState('');
-  const [channels, setChannels] = useState<Notifications.NotificationChannel[]>([]);
-  const [notification, setNotification] = useState<Notifications.Notification | undefined>(
-    undefined
-  );
-  const nativation = useNavigation();
+
+export default function Player() {
+  const [index, setIndex] = useState(0);
+  const [sound, setSound] = useState<Audio.Sound|null>(null);
+
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
+
+  // 🎨 Theme
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(isDark ? '#000' : '#fff');
+  }, [isDark]);
 
   useEffect(() => {
-    registerForPushNotificationsAsync().then(async (token:any) => {
-      if (token) {
-        setExpoPushToken(token);
-        try {
-          console.log(token)
-          console.log(`${process.env.EXPO_PUBLIC_API_URL}/users/register-token`)
-          const resp = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/users/register-token`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ id: 1, expo_token: token })
-            });
-            console.log(await resp.json());
-        } catch (error) {
-          console.error(error)
+    // 🔔 Notification create
+    NotificationUtils.requestPermissions();
+    Notifications.setNotificationCategoryAsync('music-controls', [
+      { identifier: 'prev', buttonTitle: '⏪ Prev', options: { opensAppToForeground: false } },
+      { identifier: 'pause', buttonTitle: '⏸ Play', options: { opensAppToForeground: true } },
+      { identifier: 'next', buttonTitle: '⏩ Next', options: { opensAppToForeground: false } },
+    ]);
+    
+    // 🔔 Notification listener
+    const sub = Notifications.addNotificationResponseReceivedListener(
+      async (res) => {
+        const action = res.actionIdentifier;
+        const data = res.notification.request.content.data as { index: number };
+        let i = data.index ?? 0;
+
+        if (action === 'NEXT') i = (i + 1) % tracks.length;
+        if (action === 'PREV')
+          i = i === 0 ? tracks.length - 1 : i - 1;
+
+        setIndex(i);
+
+        if (action === 'PLAY') {
+          await playSound(i);
         }
+        // 🔔 Show notification
+        NotificationUtils.showPlayerNotification(i); // 🔄 update notification
+      }
+    );
 
-      }
-    });
-
-    if (Platform.OS === 'android') {
-      Notifications.getNotificationChannelsAsync().then(value => setChannels(value ?? []));
-    }
-    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      setNotification(notification);
-    });
-
-    const responseListener = Notifications.addNotificationResponseReceivedListener(async response => {
-      console.log('Kabul edildi...');
-      const { actionIdentifier, notification } = response;
-      if (actionIdentifier === "play") {
-        console.log("Play button pressed");
-      }
-      if (actionIdentifier === 'pause') {
-        console.log("Pause button pressed");
-      }
-      if (actionIdentifier === 'stop') {
-        console.log('Stop button pressed')
-      }
-      if (actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER) {
-        console.log('Notification tapped');
-        // Linking.openURL('https://www.google.com/maps/search/?api=1&query=Ashgabat')
-        // Linking.openSettings()
-        // Linking.openURL('sms://+99262295942')
-      }
-    });
-
-    return () => {
-      notificationListener.remove();
-      responseListener.remove();
-    };
+    return () => sub.remove();
   }, []);
 
-  return (
-    <SafeAreaView style={{ flex: 1, padding: 16 }}>
-      <View
-        style={{
-          alignItems: 'center',
-          justifyContent: 'space-around',
-        }}>
-        <Text>Your expo push token: {expoPushToken}</Text>
-        <Text>{`Channels: ${JSON.stringify(channels.map(c => c.id), null, 2)}`}</Text>
-        <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-          <Text>Title: {notification && notification.request.content.title} </Text>
-          <Text>Body: {notification && notification.request.content.body}</Text>
-          <Text>Data: {notification && JSON.stringify(notification.request.content.data)}</Text>
-        </View>
-        <Button
-          title='to Gallery'
-          onPress={() => nativation.navigate('/gallery')}
-        />
-        <ScrollView style={{ backgroundColor: "gray", gap: 10, marginTop: 20, padding: 10 }}>
-          <Text style={{ fontSize: 16, fontFamily: "Time New" }}></Text>
-          <Button
-            title="Press to schedule a notification"
-            onPress={async () => await schedulePushNotification('Selam!', "Bu salamlaşmak üçin ugradyldy.", { data: 'Bu mugalumat' })}
-          />
-          <Button
-            title='to show local notification'
-            onPress={async () => await scheduleLocalNotification('Local notification title', 'Local notification body', { localData: 'local data' })}
-          />
-          <Button
-            title='to show 5 minut local notification'
-            onPress={async () => await scheduleLocalSecondNotification('5 sekundan gelýär')}
-          />
-          <Button
-            title='to show player notification'
-            onPress={async () => await showMediaNotification()}
-          />
-          <Button
-            title='to show Image notification'
-            onPress={async () => await sendImageNotification()}
-          />
-        </ScrollView>
+  // 🔊 Play sound
+  const playSound = async (i:number) => {
+    if (sound) await sound.unloadAsync();
 
-      </View>
-    </SafeAreaView>
+    const { sound: newSound } = await Audio.Sound.createAsync(
+      tracks[i].sound
+    );
+
+    setSound(newSound);
+    await newSound.playAsync();
+  };
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: isDark ? '#000' : '#fff',
+      }}
+    >
+      {/* 🖼 Image */}
+      <Image
+        source={tracks[index].image}
+        style={{ width: 200, height: 200, marginBottom: 20 }}
+      />
+
+      {/* 📝 Text */}
+      <Text
+        style={{
+          color: isDark ? '#fff' : '#000',
+          fontSize: 20,
+          marginBottom: 20,
+        }}
+      >
+        {tracks[index].title}
+      </Text>
+
+      {/* 🎮 Controls */}
+      <Button title="▶️ Play" onPress={() => playSound(index)} />
+      <Button
+        title="⏭ Next"
+        onPress={() =>
+          setIndex((prev) => (prev + 1) % tracks.length)
+        }
+      />
+      <Button
+        title="⏮ Prev"
+        onPress={() =>
+          setIndex((prev) =>
+            prev === 0 ? tracks.length - 1 : prev - 1
+          )
+        }
+      />
+
+      {/* 🔔 Notification */}
+      <Button
+        title="Notification aç"
+        onPress={() => NotificationUtils.showPlayerNotification(index)}
+      />
+    </View>
   );
 }
