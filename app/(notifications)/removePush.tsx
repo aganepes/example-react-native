@@ -10,15 +10,15 @@ export default function App() {
   const [body, setBody] = useState<string>('');
   const [title, setTitle] = useState<string>('');
   const segments = useSegments();
-  async function sendPushNotification(expoPushToken: string, body: string, title: string) {
+  async function sendPushNotification(expoPushToken: string, title: string, page: string) {
     const message = {
       to: expoPushToken,
       title: title || 'Original Title',
-      body: body || 'And here is the body!',
-      data: { someData: 'goes here' },
+      body: `${page} page and here is the body!`,
+      data: { url: page },
     };
 
-    await fetch('https://exp.host/--/api/v2/push/send', {
+    const response = await fetch('https://exp.host/--/api/v2/push/send', {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -27,14 +27,15 @@ export default function App() {
       },
       body: JSON.stringify(message),
     });
+    const data = await response.json();
+    console.warn('Response: ', data);
   }
 
   useEffect(() => {
-    let token
-    (async () => {
-      token = await NotificationUtils.getPushTokenAsync();
-    })()
-    setExpoPushToken(token || '');
+    NotificationUtils.getPushTokenAsync().then(token => {
+      setExpoPushToken(token || '');
+      console.warn("Token: ", token);
+    });
   }, [])
 
   return (
@@ -49,12 +50,12 @@ export default function App() {
         </View>
         <View style={{ width: '90%', padding: 10, gap: 12 }}>
           {/*  */}
-          <TextInput style={styles.input} placeholder='input to notification title' onChangeText={setTitle} value={title} />
-          <Text style={{ fontSize: 10, color: 'green' }}>{JSON.stringify(segments, null, 2)}</Text>
-          <TextInput style={styles.input} placeholder='input to page' onChangeText={setBody} value={body} />
+          <TextInput style={styles.input} placeholder='input to notification title' onChangeText={setTitle} value={title} placeholderTextColor={"#505751"} />
+          <Text style={{ fontSize: 10, color: 'green' }}>Pages: {JSON.stringify(segments, null, 2)}</Text>
+          <TextInput style={styles.input} placeholder='input to page' onChangeText={setBody} value={body} placeholderTextColor={"#505751"} />
           {/*  */}
           <Pressable style={styles.button}
-            onPress={() => sendPushNotification(expoPushToken, title, `/${body}`)}>
+            onPress={() => sendPushNotification(expoPushToken, title, body)}>
             <Text style={{ fontSize: 14, fontWeight: 'bold' }}>To default notification</Text>
           </Pressable>
         </View>
@@ -70,7 +71,9 @@ const styles = StyleSheet.create({
   },
   button: {
     padding: 10,
-    width: "100%"
+    width: "100%",
+    backgroundColor: "#3A5F3E",
+    color: "#ffffff"
   },
   input: {
     paddingBlock: 5,

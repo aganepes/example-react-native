@@ -124,8 +124,9 @@ namespace NotificationUtils {
       }
       if (finalStatus !== 'granted') {
         alert('Push token natification rugsat berilmedi!');
-        return true;
+        return false;
       }
+      return true
     }
     alert('Push natification rugsat berilmedi! Hakyky telefon gerekli!');
     return false;
@@ -137,18 +138,17 @@ namespace NotificationUtils {
       return;
     }
 
-    let token;
+    let token=null;
     try {
       const projectId =
         Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-      console.log(projectId);
       if (!projectId) {
         throw new Error('Project ID not found');
       }
+      console.log('Token object: ',(await Notifications.getExpoPushTokenAsync({ projectId })))
       token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-      // 
     } catch (e) {
-      token = `${e}`;
+      console.error(e);
     }
 
     return token;
@@ -203,7 +203,6 @@ namespace NotificationUtils {
   }
   export async function showPlayerNotification(index:number = 0,) {
     
-
     await Notifications.scheduleNotificationAsync({
       content: {
         title: `${tracks[index].title} 🎼`,
@@ -226,6 +225,7 @@ namespace NotificationUtils {
           router.push(url as any);
         }
       }
+      initionalize();
       //! killed state - close app and background to working
       const response = Notifications.getLastNotificationResponse();
       if (response?.notification) {

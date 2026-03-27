@@ -1,4 +1,3 @@
-// screens/RegisterScreen.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -14,15 +13,18 @@ import {
 } from 'react-native';
 import useLoginStore from '@/store/loginStore';
 import { useRouter } from 'expo-router';
+import { RegisterData } from '@/types/user';
+import NotificationUtils from '@/utils/notification';
 
 const RegisterScreen = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RegisterData>({
     name: '',
     lastname: '',
     username: '',
     password: '',
     surename: '',
     pasportSerial: '',
+    pushToken: ''
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -43,6 +45,9 @@ const RegisterScreen = () => {
       Alert.alert('Error', 'Password must be at least 6 characters');
       return;
     }
+    //  get push token
+    const token = await NotificationUtils.getPushTokenAsync();
+    setFormData((state) => ({ ...state, pushToken: token || "" }));
 
     await register(formData);
 

@@ -1,4 +1,4 @@
-import { Tabs  } from 'expo-router';
+import { Tabs } from 'expo-router';
 
 const LayoutTabs = () => {
   return <Tabs screenOptions={{ headerShown: true, animation: "shift" }} />

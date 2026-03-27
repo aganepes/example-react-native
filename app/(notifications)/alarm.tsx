@@ -48,9 +48,10 @@ export default function AlarmComponent() {
 
       <Text>Wagt: {time.toLocaleTimeString()}</Text>
 
-      <Button title="Wagty sayla" onPress={() => setShowPicker(true)} />
+      <Button title="Wagty saýla" onPress={() => setShowPicker(true)} />
 
       {showPicker && (
+        // <Text>DateTimePicker</Text>
         <DateTimePicker
           value={time}
           mode="time"

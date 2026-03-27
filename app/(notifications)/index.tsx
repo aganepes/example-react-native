@@ -42,12 +42,12 @@ export default function App() {
           <Text style={styles.text}>Title: {notification && notification.request.content.title} </Text>
         </View>
         <View style={{ width: '90%', padding: 10, gap: 12 }}>
-          {/*  */}
-          <TextInput style={styles.input} placeholder='input to notification title' onChangeText={setTitle} value={title} />
-          {/*  */}
+          {/* Input */}
+          <TextInput style={styles.input} placeholder='input to notification title' onChangeText={setTitle} value={title} placeholderTextColor={"gray"} />
+          {/* Default notification button */}
           <Pressable style={styles.button}
             onPress={() => NotificationUtils.scheduleWarningNotification(title)}>
-            <Text style={{ fontSize: 14, fontWeight: 'bold' }}>To default notification</Text>
+            <Text style={{ fontSize: 14, fontWeight: 'bold',color: "#ffffff", textAlign:"center" }}>To default notification</Text>
           </Pressable>
         </View>
         <View style={{gap:10}}>
@@ -69,11 +69,14 @@ const styles = StyleSheet.create({
   },
   button: {
     padding: 10,
-    width: "100%"
+    width: "100%",
+    backgroundColor: "#3A5F3E",
+    borderRadius:5,
   },
   input: {
     paddingBlock: 5,
     paddingInline: 10,
+    paddingLeft:15,
     borderRadius: 5,
     borderWidth: 1,
     borderColor: "black",
